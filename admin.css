@@ -1,0 +1,172 @@
+.ifb-blur-btn {
+    font-weight: bold;
+    color: #b32d2e;
+}
+
+
+/* Modal Overlay */
+.ifb-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 100000;
+    /* Higher than WP admin bar */
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Modal Content */
+.ifb-modal-content {
+    background: #fff;
+    padding: 20px;
+    border-radius: 4px;
+    width: 95%;
+    /* Wider default */
+    height: 95%;
+    /* Taller default */
+    max-width: 1400px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    z-index: 100001;
+}
+
+.ifb-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+    flex-shrink: 0;
+}
+
+.ifb-modal-header h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.ifb-modal-actions button {
+    margin-left: 10px;
+}
+
+/* Canvas Area */
+.ifb-canvas-container {
+    position: relative;
+    overflow: auto;
+    border: 1px solid #ccc;
+    background: #f0f0f0;
+    /* Darker bg to see image bounds */
+    flex-grow: 1;
+    /* Fill remaining space */
+    display: flex;
+    /* Center wrapper if smaller than modal */
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px;
+}
+
+.ifb-image-wrapper {
+    position: relative;
+    display: inline-block;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.ifb-image-wrapper img {
+    display: block;
+    /* Remove bottom space */
+    max-width: none;
+    /* Let JS handle it or allow full size scrolling? Actually usually better to fit. */
+    /* Let's allow natural size but constrained by max-width for sanity initially, but JS sets width/height */
+    /* If we want to support huge images, scrolling is better than shrinking which makes precise selection hard */
+    /* We reset standard WP admin styles */
+    height: auto;
+}
+
+/* Blur Circles */
+.ifb-blur-circle {
+    position: absolute;
+    border: 2px solid #fff;
+    /* White border for contrast */
+    box-shadow: 0 0 3px #000;
+    /* Shadow for contrast */
+    background: rgba(255, 0, 0, 0.3);
+    border-radius: 50%;
+    box-sizing: border-box;
+    cursor: move;
+    z-index: 10;
+}
+
+.ifb-blur-circle.ui-resizable-resizing {
+    background: rgba(255, 0, 0, 0.1);
+}
+
+/* Resizable Handles */
+.ui-resizable-handle {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border: 1px solid #333;
+    border-radius: 50%;
+    z-index: 20 !important;
+    display: block !important;
+    /* Force show */
+}
+
+/* Specific handle positions (jQuery UI creates these classes, we just style them to be visible) */
+.ui-resizable-ne {
+    top: -6px;
+    right: -6px;
+    cursor: ne-resize;
+}
+
+.ui-resizable-nw {
+    top: -6px;
+    left: -6px;
+    cursor: nw-resize;
+}
+
+.ui-resizable-se {
+    bottom: -6px;
+    right: -6px;
+    cursor: se-resize;
+}
+
+.ui-resizable-sw {
+    bottom: -6px;
+    left: -6px;
+    cursor: sw-resize;
+}
+
+.ui-resizable-n {
+    top: -6px;
+    left: 50%;
+    margin-left: -6px;
+    cursor: n-resize;
+}
+
+.ui-resizable-s {
+    bottom: -6px;
+    left: 50%;
+    margin-left: -6px;
+    cursor: s-resize;
+}
+
+.ui-resizable-e {
+    right: -6px;
+    top: 50%;
+    margin-top: -6px;
+    cursor: e-resize;
+}
+
+.ui-resizable-w {
+    left: -6px;
+    top: 50%;
+    margin-top: -6px;
+    cursor: w-resize;
+}
