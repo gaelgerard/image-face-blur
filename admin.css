@@ -55,36 +55,45 @@
 }
 
 /* Canvas Area */
+/* Canvas Area */
 .ifb-canvas-container {
     position: relative;
-    overflow: auto;
+    overflow: hidden;
+    /* Prevent scroll */
     border: 1px solid #ccc;
     background: #f0f0f0;
-    /* Darker bg to see image bounds */
     flex-grow: 1;
-    /* Fill remaining space */
     display: flex;
-    /* Center wrapper if smaller than modal */
     justify-content: center;
-    align-items: flex-start;
-    padding: 20px;
+    align-items: center;
+    /* Center vertical */
+    padding: 10px;
 }
 
 .ifb-image-wrapper {
     position: relative;
     display: inline-block;
+    /* Shrink to fit image */
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    /* Ensure wrapper doesn't overflow container */
+    max-width: 100%;
+    max-height: 100%;
 }
 
 .ifb-image-wrapper img {
     display: block;
-    /* Remove bottom space */
-    max-width: none;
-    /* Let JS handle it or allow full size scrolling? Actually usually better to fit. */
-    /* Let's allow natural size but constrained by max-width for sanity initially, but JS sets width/height */
-    /* If we want to support huge images, scrolling is better than shrinking which makes precise selection hard */
-    /* We reset standard WP admin styles */
+    max-width: 100%;
+    /* 
+       Constrain height to fit in modal nicely. 
+       Modal is 95% height. Header is ~60px. Padding ~40px. 
+       Use a safe calc or vh. 
+    */
+    max-height: 80vh;
+    width: auto;
     height: auto;
+    user-select: none;
+    -webkit-user-drag: none;
+    cursor: crosshair;
 }
 
 /* Blur Circles */

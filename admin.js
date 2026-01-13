@@ -44,11 +44,8 @@ jQuery(function ($) {
             $('#ifb-modal').fadeIn();
 
             // Adjust wrapper size to match image
-            // This ensures the wrapper is exactly the size of the image, 
-            // so clicks and positions are consistent.
+            // We just ensure display is correct, CSS handles the max-width/height logic
             $('#ifb-wrapper').css({
-                width: this.width || 'auto',
-                height: this.height || 'auto',
                 display: 'inline-block',
                 position: 'relative'
             });

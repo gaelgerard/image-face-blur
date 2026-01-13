@@ -53,41 +53,71 @@ class Image_Face_Blur {
         $id = intval($_POST['id']);
         $circles = $_POST['circles']; // Array of {x, y, r}
 
-        $path = get_attached_file($id);
-        if (!file_exists($path)) wp_send_json_error('Image introuvable');
+        // 1. Identify the file displayed in frontend vs the true original
+        // Frontend typically uses get_attached_file() (which might be -scaled)
+        $front_path = get_attached_file($id);
+        
+        // Try to get the "real" original (if WP created a -scaled version)
+        $process_path = $front_path;
+        if (function_exists('wp_get_original_image_path')) {
+            $real_original = wp_get_original_image_path($id);
+            if ($real_original && file_exists($real_original)) {
+                $process_path = $real_original;
+            }
+        }
+
+        if (!file_exists($process_path)) wp_send_json_error('Image introuvable');
 
         // Increase memory limit for image processing
         @ini_set('memory_limit', '512M');
 
-        $img = imagecreatefromstring(file_get_contents($path));
+        // 2. Calculate scaling ratio if we are processing a different file than displayed
+        $scale_ratio = 1.0;
+        if ($process_path !== $front_path && file_exists($front_path)) {
+            $front_size = getimagesize($front_path);
+            $process_size = getimagesize($process_path);
+            if ($front_size && $process_size && $front_size[0] > 0) {
+                $scale_ratio = $process_size[0] / $front_size[0];
+            }
+        }
+
+        $img = imagecreatefromstring(file_get_contents($process_path));
         if (!$img) wp_send_json_error('Impossible de charger l\'image');
 
         foreach ($circles as $c) {
-            $this->blur_circle($img, floatval($c['x']), floatval($c['y']), floatval($c['r']));
+            // Apply scale to coordinates
+            $cur_x = floatval($c['x']) * $scale_ratio;
+            $cur_y = floatval($c['y']) * $scale_ratio;
+            $cur_r = floatval($c['r']) * $scale_ratio;
+            
+            $this->blur_circle($img, $cur_x, $cur_y, $cur_r);
         }
 
-        // Save back to original path
-        $info = getimagesize($path);
+        // Save back to process_path (overwriting the Real Original)
+        $info = getimagesize($process_path);
         switch ($info['mime']) {
             case 'image/jpeg':
-                imagejpeg($img, $path, 90);
+                imagejpeg($img, $process_path, 90);
                 break;
             case 'image/png':
-                imagepng($img, $path, 9);
+                imagepng($img, $process_path, 9);
                 break;
             case 'image/gif':
-                imagegif($img, $path);
+                imagegif($img, $process_path);
                 break;
             case 'image/webp':
-                imagewebp($img, $path, 90);
+                imagewebp($img, $process_path, 90);
                 break;
         }
         
         imagedestroy($img);
 
-        // Regenerate thumbnails
+        // Regenerate thumbnails AND the -scaled version if applicable
+        // We must pass the Process Path (the real original) so WP generates everything from it
         require_once ABSPATH . 'wp-admin/includes/image.php';
-        $metadata = wp_generate_attachment_metadata($id, $path);
+        
+        // If we modified the "Real Original", this will regenerate -scaled and thumbnails
+        $metadata = wp_generate_attachment_metadata($id, $process_path);
         wp_update_attachment_metadata($id, $metadata);
 
         wp_send_json_success();
@@ -152,10 +182,26 @@ class Image_Face_Blur {
         $blurred = imagecreatetruecolor($param_w, $param_h);
         imagecopy($blurred, $img, 0, 0, $box_x, $box_y, $param_w, $param_h);
         
-        // Blur more times for stronger effect
-        for ($i = 0; $i < 40; $i++) { 
-             imagefilter($blurred, IMG_FILTER_GAUSSIAN_BLUR);
+        // Optimization: Strong blur by downscaling and upscaling
+        // This simulates a heavy blur instantly by reducing information density
+        $scale_factor = 15; // Higher = stronger blur
+        $tiny_w = max(1, floor($param_w / $scale_factor));
+        $tiny_h = max(1, floor($param_h / $scale_factor));
+        
+        $tiny = imagecreatetruecolor($tiny_w, $tiny_h);
+        
+        // Downscale (removes detail)
+        imagecopyresampled($tiny, $blurred, 0, 0, 0, 0, $tiny_w, $tiny_h, $param_w, $param_h);
+        
+        // Light blur on the tiny image to smooth out pixelation
+        for ($k = 0; $k < 5; $k++) {
+            imagefilter($tiny, IMG_FILTER_GAUSSIAN_BLUR);
         }
+
+        // Upscale back (interpolates to create smooth blur)
+        imagecopyresampled($blurred, $tiny, 0, 0, 0, 0, $param_w, $param_h, $tiny_w, $tiny_h);
+        
+        imagedestroy($tiny);
 
         for ($y = 0; $y < $param_h; $y++) {
             for ($x = 0; $x < $param_w; $x++) {
